@@ -1,44 +1,50 @@
-/// Calculate raw cost of a recipe
-///
-/// ```
-/// let recipe = recipe_calculator::Recipe {
-///     produces: recipe_calculator::NamedQuantity {
-///         name: String::from("wood planks"),
-///         quantity: 2,
-///     },
-///     ingredients: recipe_calculator::NamedQuantity {
-///         name: String::from("wood"),
-///         quantity: 1,
-///     },
-/// };
-/// let actual_raw_cost = recipe_calculator::raw_cost(
-///     recipe,
-///     recipe_calculator::NamedQuantity {
-///         name: String::from("wood planks"),
-///         quantity: 64,
-///     },
-/// );
-/// let expected_raw_cost = recipe_calculator::NamedQuantity {
-///     name: String::from("wood"),
-///     quantity: 32,
-/// };
-/// assert_eq!(actual_raw_cost, expected_raw_cost);
-/// ```
-pub fn raw_cost(recipe: Recipe, named_quantity: NamedQuantity) -> NamedQuantity {
-    NamedQuantity {
-        name: recipe.ingredients.name,
-        quantity: named_quantity.quantity / recipe.produces.quantity
-    }
+use serde::Deserialize;
+
+struct Calculator {
+    recipe: Recipe,
 }
 
-#[derive(PartialEq, Debug)]
-pub struct Recipe{
+#[derive(Debug, Deserialize, PartialEq)]
+pub struct Recipe {
+    pub consumes: NamedQuantity,
     pub produces: NamedQuantity,
-    pub ingredients: NamedQuantity,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub struct NamedQuantity {
     pub name: String,
     pub quantity: i32,
+}
+
+impl Calculator {
+    pub fn new(toml_string: String) -> Self {
+        Self {
+            recipe: toml::from_str(&toml_string).unwrap(),
+        }
+    }
+
+    pub fn raw_cost(&self, query: String) -> String {
+        query
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn multiply_quantity() {
+        let recipe_toml = String::from(
+            r#"
+                consumes = { name = "wood", quantity = 1 }
+                produces = { name = "wood planks", quantity = 2 }
+            "#,
+        );
+
+        let calculator = Calculator::new(recipe_toml);
+
+        let expected_raw_cost = "1 wood";
+        let actual_raw_cost = calculator.raw_cost(String::from("2 wood planks"));
+        assert_eq!(expected_raw_cost, actual_raw_cost)
+    }
 }
